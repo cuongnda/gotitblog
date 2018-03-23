@@ -28,10 +28,15 @@ If you are using autoenv you can take edit .env file in the project folder. If n
  wish, especially the database config
 
     $export FLASK_APP="run.py"
+
     $export FLASK_DEBUG=1
+
     $export SECRET="some-very-long-string-of-random-characters1212"
+
     $export APP_SETTINGS="development"
+
     $export DATABASE_URL="mysql://DATABASE_USERNAME:DATABASE_PASSWORD@localhost/DATABASE_NAME"
+ 
     $export OAUTHLIB_INSECURE_TRANSPORT=1
 
 Enter your Facebook app and Google app credential in the configration file at gotitblog/instance/config

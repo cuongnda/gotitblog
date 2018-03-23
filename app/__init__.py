@@ -1,17 +1,14 @@
-from flask_api import FlaskAPI
 
+from flask import jsonify, redirect, url_for, Flask
 from flask_dance.consumer import oauth_authorized
 from flask_dance.consumer.backend.sqla import SQLAlchemyBackend
 from flask_dance.contrib.facebook import make_facebook_blueprint, facebook
+from flask_dance.contrib.google import make_google_blueprint, google
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 from flask_migrate import Migrate
-from flask_security import SQLAlchemyUserDatastore, Security
-from flask_dance.contrib.google import make_google_blueprint, google
-
-from flask_sqlalchemy import SQLAlchemy
-from flask import request, jsonify, abort, render_template, redirect, url_for, flash, Flask
 from flask_restful import Api
-
+from flask_security import SQLAlchemyUserDatastore, Security
+from flask_sqlalchemy import SQLAlchemy
 # local import
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -24,7 +21,7 @@ db = SQLAlchemy()
 def create_app(config_name):
     from app.models import BlogPost, User, Role, OAuth
     from app.resources import Post, PostList, UserResource, UserList, Like
-    # app = FlaskAPI(__name__, instance_relative_config=True)
+
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
     app.config.from_pyfile("config.py")
@@ -35,12 +32,14 @@ def create_app(config_name):
     # Setup Flask Migration
     migrate = Migrate(app, db)
 
+    # Setup Flask restful API
     api = Api(app)
     api.add_resource(Post, "/posts/<int:post_id>")
     api.add_resource(PostList, "/posts")
     api.add_resource(UserResource, "/users/<int:user_id>")
     api.add_resource(UserList, "/users")
     api.add_resource(Like, "/posts/<int:post_id>/like")
+
     # Setup Flask-Security
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)

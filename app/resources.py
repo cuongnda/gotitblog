@@ -1,7 +1,6 @@
 from flask import request, abort
 from flask_login import current_user, login_required
 from flask_restful import Resource, reqparse
-from flask_restful_swagger import swagger
 
 from app.models import BlogPost, User
 from app.utils import finish_registration_required

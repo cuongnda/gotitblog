@@ -1,15 +1,9 @@
-from flask_api import FlaskAPI
+from flask import abort, json
 from flask_dance.consumer.backend.sqla import OAuthConsumerMixin
-from flask_migrate import Migrate
-import os
-
-from flask_restful_swagger import swagger
-from flask_sqlalchemy import SQLAlchemy
-from flask_security import Security, SQLAlchemyUserDatastore, \
-    UserMixin, RoleMixin, login_required
+from flask_security import UserMixin, RoleMixin
 from sqlalchemy_utils import ChoiceType
-from flask import abort, jsonify, json
-from app import db, create_app
+
+from app import db
 
 USER_TYPES = [
     (u'facebook', u'Facebook'),
@@ -89,7 +83,6 @@ likes = db.Table('likes',
                  db.Column('user_id', db.Integer, db.ForeignKey(User.id), primary_key=True)
                  )
 
-@swagger.model
 class BlogPost(db.Model):
     """This class represents the Blog Post table."""
 

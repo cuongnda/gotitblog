@@ -1,13 +1,12 @@
 from functools import wraps
-from flask import g, request, redirect, url_for
 from flask_login import current_user
 
 
 def finish_registration_required(f):
-    """This handful decoration is check for registration status user"""
+    """This handful decoration check for user registration status"""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
-
         if not current_user.registration_completed():
             response = {
                 "status": "error",
@@ -17,4 +16,5 @@ def finish_registration_required(f):
             return response, 403
 
         return f(*args, **kwargs)
+
     return decorated_function

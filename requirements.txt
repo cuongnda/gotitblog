@@ -1,0 +1,15 @@
+flask-sqlalchemy
+sqlalchemy_utils
+flask-mysql
+flask-migrate
+Flask-API
+mysqlclient
+Flask-Social
+Flask-Security
+oauth2client
+google-api-python-client
+facebook-sdk
+bcrypt
+flask-dance
+pyopenssl
+Markdown

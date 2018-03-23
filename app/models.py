@@ -2,11 +2,13 @@ from flask_api import FlaskAPI
 from flask_dance.consumer.backend.sqla import OAuthConsumerMixin
 from flask_migrate import Migrate
 import os
+
+from flask_restful_swagger import swagger
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required
 from sqlalchemy_utils import ChoiceType
-from flask import abort, jsonify
+from flask import abort, jsonify, json
 from app import db, create_app
 
 USER_TYPES = [
@@ -70,6 +72,9 @@ class User(db.Model, UserMixin):
         }
         return result
 
+    def to_json(self):
+        return json.dumps(self.to_dict(), indent=4, sort_keys=True, default=str)
+
     def __repr__(self):
         return "<User: {}>".format(self.email)
 
@@ -84,7 +89,7 @@ likes = db.Table('likes',
                  db.Column('user_id', db.Integer, db.ForeignKey(User.id), primary_key=True)
                  )
 
-
+@swagger.model
 class BlogPost(db.Model):
     """This class represents the Blog Post table."""
 
@@ -131,6 +136,9 @@ class BlogPost(db.Model):
             "likes": like_users
         }
         return result
+
+    def to_json(self):
+        return json.dumps(self.to_dict(), indent=4, sort_keys=True, default=str)
 
     @staticmethod
     def get_all():

@@ -1,4 +1,5 @@
 from flask_api import FlaskAPI
+
 from flask_dance.consumer import oauth_authorized
 from flask_dance.consumer.backend.sqla import SQLAlchemyBackend
 from flask_dance.contrib.facebook import make_facebook_blueprint, facebook
@@ -8,7 +9,8 @@ from flask_security import SQLAlchemyUserDatastore, Security
 from flask_dance.contrib.google import make_google_blueprint, google
 
 from flask_sqlalchemy import SQLAlchemy
-from flask import request, jsonify, abort, render_template, redirect, url_for, flash
+from flask import request, jsonify, abort, render_template, redirect, url_for, flash, Flask
+from flask_restful import Api
 
 # local import
 from sqlalchemy.orm.exc import NoResultFound
@@ -21,18 +23,24 @@ db = SQLAlchemy()
 
 def create_app(config_name):
     from app.models import BlogPost, User, Role, OAuth
-
-    app = FlaskAPI(__name__, instance_relative_config=True)
+    from app.resources import Post, PostList, UserResource, UserList, Like
+    # app = FlaskAPI(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
     app.config.from_pyfile("config.py")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = "super-secret"
 
-    app.config["SECURITY_POST_LOGIN"] = "/profile"
-
     db.init_app(app)
     # Setup Flask Migration
     migrate = Migrate(app, db)
+
+    api = Api(app)
+    api.add_resource(Post, "/posts/<int:post_id>")
+    api.add_resource(PostList, "/posts")
+    api.add_resource(UserResource, "/users/<int:user_id>")
+    api.add_resource(UserList, "/users")
+    api.add_resource(Like, "/posts/<int:post_id>/like")
     # Setup Flask-Security
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)
@@ -45,8 +53,8 @@ def create_app(config_name):
         return User.query.get(int(user_id))
 
     google_blueprint = make_google_blueprint(
-        client_id="406704713101-d6a8tbbfq6cmmf16vtljh6gj71bn0ro9.apps.googleusercontent.com",
-        client_secret="wvtkTq8IOxtOMHs2bvuN7kiV",
+        client_id=app.config['GOOGLE_API_CLIENT_ID'],
+        client_secret=app.config['GOOGLE_API_CLIENT_ID'],
         scope=["profile", "email"]
     )
     google_blueprint.backend = SQLAlchemyBackend(OAuth, db.session, user=current_user)
@@ -112,8 +120,6 @@ def create_app(config_name):
                     })
                     response.status_code = 200
                     return response
-                    # return redirect(url_for("facebook.login"))
-                    # return False
             except NoResultFound:
                 # If no user with existing email found, we create new user, mark him as Google user
                 user = User(email=email, type="google", active=True)
@@ -142,8 +148,8 @@ def create_app(config_name):
             return response
 
     facebook_blueprint = make_facebook_blueprint(
-        client_id="2032137377002819",
-        client_secret="f4857526cfa52e0e390e1943dd636225",
+        client_id=app.config['FACEBOOK_API_CLIENT_ID'],
+        client_secret=app.config['FACEBOOK_API_CLIENT_SECRETE'],
         scope=["public_profile", "email"]
     )
     facebook_blueprint.backend = SQLAlchemyBackend(OAuth, db.session, user=current_user)
@@ -259,10 +265,15 @@ def create_app(config_name):
     @app.route("/my_login")
     def my_login():
         response = jsonify({
-            "facebook_login_url": url_for("facebook_login"),
-            "google_login_url": url_for("google_login"),
+            "status": "error",
+            "message": "Login Required",
+            "data": {
+
+                "facebook_login_url": url_for("facebook_login"),
+                "google_login_url": url_for("google_login"),
+            }
         })
-        response.status_code = 201
+        response.status_code = 403
         return response
 
     @app.route("/logout")
@@ -270,137 +281,5 @@ def create_app(config_name):
     def logout():
         logout_user()
         return redirect(url_for("home"))
-
-    # This is the end point for user to get/update his data
-    @app.route("/me", methods=["GET", "PUT"])
-    @login_required
-    def user_manipulation(**kwargs):
-        user = current_user
-        if request.method == "GET":
-            response = jsonify(user.to_dict())
-            response.status_code = 200
-            return response
-        elif request.method == "PUT":
-            name = str(request.data.get("name", ""))
-            phone = str(request.data.get("phone", ""))
-            occupation = str(request.data.get("occupation", ""))
-            user.name = name
-            user.phone = phone
-            user.occupation = occupation
-            user.save()
-            response = jsonify(user.to_dict())
-            response.status_code = 200
-            return response
-
-    # This is the end point for getting user data, this can be call from any user
-    @app.route("/users", methods=["GET"])
-    @login_required
-    def users(**kwargs):
-        if request.method == "GET":
-            users = User.get_all()
-            results = []
-
-            for user in users:
-                obj = user.to_dict()
-                results.append(obj)
-            response = jsonify(results)
-            response.status_code = 200
-            return response
-
-    # This is the end point for getting user data, this can be call from any user
-    @app.route("/users/<int:id>", methods=["GET"])
-    @login_required
-    def user(id, **kwargs):
-        if request.method == "GET":
-            user = User.query.filter_by(id=id).first()
-            if not user:
-                # Raise an HTTPException with a 404 not found status code
-                abort(404)
-            response = jsonify(user.to_dict())
-            response.status_code = 200
-            return response
-
-    @app.route("/posts", methods=["POST", "GET"])
-    @login_required
-    def posts():
-        user = current_user
-        if request.method == "POST":
-            # We only allow user to add post when his registration process is done
-            if not user.registration_completed():
-                response = jsonify({
-                    "status": "error",
-                    "message": "You did not finish your registration process. Please update your profile to continue!",
-                    "data": user.to_dict()
-                })
-                response.status_code = 403
-                return response
-
-            title = str(request.data.get("title", ""))
-            content = str(request.data.get("content", ""))
-            if title:
-                post = BlogPost(title=title, content=content)
-                post.author_id = user.id
-                post.save()
-                response = jsonify(post.to_dict())
-                response.status_code = 201
-                return response
-            else:
-                response = jsonify({
-                    "error": "Bad request"
-                })
-                response.status_code = 400
-                return response
-        else:
-            # GET
-            posts = BlogPost.get_all()
-            results = []
-
-            for post in posts:
-                obj = post.to_dict()
-                results.append(obj)
-            response = jsonify(results)
-            response.status_code = 200
-            return response
-
-    @app.route("/posts/<int:id>", methods=["GET", "PUT", "DELETE"])
-    @login_required
-    def post_manipulation(id, **kwargs):
-        post = BlogPost.query.filter_by(id=id).first()
-        if not post:
-            # Raise an HTTPException with a 404 not found status code
-            abort(404)
-
-        if request.method == "DELETE":
-            post.delete()
-            return {
-                       "message": "post {} deleted successfully".format(post.id)
-                   }, 200
-
-        elif request.method == "PUT":
-            title = str(request.data.get("title", ""))
-            post.title = title
-            post.save()
-            response = jsonify(post.to_dict)
-            response.status_code = 200
-            return response
-        else:
-            response = jsonify(post.to_dict())
-            response.status_code = 200
-            return response
-
-    @app.route("/posts/<int:id>/like")
-    @login_required
-    def like(id, **kwargs):
-        """Perform a like action from current user"""
-        post = BlogPost.query.filter_by(id=id).first()
-        if not post:
-            # Raise an HTTPException with a 404 not found status code
-            abort(404)
-        user = current_user
-        post.like_by(user.id)
-        post.save()
-        response = jsonify(post.to_dict())
-        response.status_code = 200
-        return response
 
     return app

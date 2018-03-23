@@ -18,7 +18,9 @@ Installation
 Just the basics:
 
     $git clone https://github.com/cuongnda/gotitblog.git
+
     $cd gotitblog
+
     $pip install -r requirements.txt
 
 

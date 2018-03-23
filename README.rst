@@ -24,7 +24,7 @@ Just the basics:
 
 Configuration
 ============
-If you are using autoenv you can take edit .env file in the project folder. If not, you can edit these settings as you
+If you are using autoenv you can edit .env file in the project folder to fit to your preferences. If not, you can edit these settings as you
  wish, especially the database config
 
     $export FLASK_APP="run.py"
@@ -36,7 +36,7 @@ If you are using autoenv you can take edit .env file in the project folder. If n
     $export APP_SETTINGS="development"
 
     $export DATABASE_URL="mysql://DATABASE_USERNAME:DATABASE_PASSWORD@localhost/DATABASE_NAME"
- 
+
     $export OAUTHLIB_INSECURE_TRANSPORT=1
 
 Enter your Facebook app and Google app credential in the configration file at gotitblog/instance/config
@@ -65,20 +65,29 @@ End points:
 * /users : This endpoint only allow get methods, in which return all the users in the system. Login required, Finished registration required.
 
 * /users/<user_id> :
+
   * GET: Return user details
+
   * PUT: Update an user. Atm, it only allow logged in user to edit himself
 
 * /posts :
+
   * GET : Get all blog post in the system. Login required, Finished registration required.
+
   * POST : Adding new blog post. Login required, Finished registration required.
 
 * /posts/<post_id>:
+
   * GET : Get details of single post. Login required, Finished registration required.
+
   * PUT :  Update a post. Login required, Finished registration required.
+
   * DELETE: Delete a post. Login required, Finished registration required.
 
 * /posts/<post_id>/like:
+
   * POST: like a post, add current logged in user to list of user that like this post. Login required, Finished registration required.
 
 * /facebook: This end point allow user to login using their Facebook Account. Facebook app credential must be provided.
+
 * /google: This end point allow user to login using their Google Account. Google app credential must be provided.

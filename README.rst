@@ -91,3 +91,15 @@ End points:
 * /facebook: This end point allow user to login using their Facebook Account. Facebook app credential must be provided.
 
 * /google: This end point allow user to login using their Google Account. Google app credential must be provided.
+
+
+TESTING
+=========
+
+Since no frontend is developed yet, the API is mainly test with in Firefox with Rest Client add-on (https://addons.mozilla.org/en-US/firefox/addon/restclient/)
+
+UNITTEST
+=========
+TODO: Now all the test failed as I cant figure out how to write unittest for logged in user.
+
+    $python test.py

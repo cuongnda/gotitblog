@@ -21,7 +21,6 @@ class BlogPostTestCase(unittest.TestCase):
         with self.app.app_context():
             # create all tables
             db.create_all()
-
             # Create a user to test
             self.fb_user = User(email="fb_user@example.com", type='facebook')
             self.gg_user = User(email="gg_user@example.com", type='google')
@@ -34,13 +33,9 @@ class BlogPostTestCase(unittest.TestCase):
 
     def test_post_creation(self):
         """Test API can create a post (POST request)"""
-        with self.client():
-            query = User.query.filter_by(email=self.fb_user.email)
-            fb_user = query.one()
-            #login_user(self.fb_user)
-            res = self.client().post('/posts/', data=self.post)
-            self.assertEqual(res.status_code, 201)
-            self.assertIn('my very first post', str(res.data))
+        res = self.client().post('/posts/', data=self.post)
+        self.assertEqual(res.status_code, 201)
+        self.assertIn('my very first post', str(res.data))
 
     def test_api_can_get_all_posts(self):
         """Test API can get a post (GET request)."""
